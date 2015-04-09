@@ -56,6 +56,13 @@ class ProvisioningSeeder < BaseSeeder
                                                          { 'search' => 'name:ovirt AND author:jcannon' },
                                                          { 'name' => 'ovirt', 'author' => 'jcannon' })
 
+    # We have observed that if the installer is run with --reset, the
+    # database content is reset (as expected); however, the puppet environments
+    # remain on the file system.  This causes trouble when the installer is re-ran
+    # as it appears that existing environments are re-imported, but not associated
+    # with katello, an organization...etc.
+    destroy_default_puppet_env(default_organization, default_content_view)
+
     publish_task = @foreman.api_resource(:content_views).
                             action(:publish).
                             call({ :id => default_content_view['id'] })
@@ -188,6 +195,15 @@ class ProvisioningSeeder < BaseSeeder
   end
 
   private
+
+  def destroy_default_puppet_env(organization, content_view)
+    puppet_env = @foreman.environments.first("name = " + puppet_environment_name(organization, content_view))
+    if puppet_env
+      if organization['environments'].none? { |env| env['id'] == puppet_env['id'] }
+        @foreman.environments.destroy('id' => puppet_env['id'])
+      end
+    end
+  end
 
   def puppet_environment_name(organization, content_view)
     "KT_" + organization['label'] + "_Library_" + content_view['label'] + "_" + content_view['id'].to_s

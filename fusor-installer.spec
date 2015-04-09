@@ -53,16 +53,16 @@ cp config/fusor-installer.answers.yaml %{buildroot}%{_sysconfdir}/katello-instal
 %files
 %defattr(-,root,root,-)
 %doc LICENSE
-%{_datadir}/katello-installer/hooks/boot/10-add_options.rb
+%{_datadir}/katello-installer/hooks/boot/100-add_options.rb
 %{_datadir}/katello-installer/hooks/lib/base_seeder.rb
 %{_datadir}/katello-installer/hooks/lib/foreman.rb
 %attr(755, root, root) %{_datadir}/katello-installer/hooks/lib/install_modules.sh
 %{_datadir}/katello-installer/hooks/lib/base_wizard.rb
 %{_datadir}/katello-installer/hooks/lib/provisioning_seeder.rb
 %{_datadir}/katello-installer/hooks/lib/provisioning_wizard.rb
-%{_datadir}/katello-installer/hooks/post/10-setup_provisioning.rb
-%{_datadir}/katello-installer/hooks/pre_validations/10-gather_and_set_fusor_values.rb
-%{_datadir}/katello-installer/hooks/pre_values/10-register_fusor_modules.rb
+%{_datadir}/katello-installer/hooks/post/100-setup_provisioning.rb
+%{_datadir}/katello-installer/hooks/pre_validations/100-gather_and_set_fusor_values.rb
+%{_datadir}/katello-installer/hooks/pre_values/100-register_fusor_modules.rb
 %{_datadir}/katello-installer/modules/network
 %{_datadir}/katello-installer/modules/foreman/manifests/plugin/fusor.pp
 %{_datadir}/katello-installer/modules/foreman/manifests/plugin/fusor_network.pp
