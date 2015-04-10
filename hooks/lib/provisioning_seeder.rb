@@ -186,12 +186,12 @@ class ProvisioningSeeder < BaseSeeder
                         { 'domain' => default_domain, 'subnet' => default_subnet,
                           'config_templates' => default_config_templates, 'hostgroups' => [default_hostgroup],
                           'environments' => [default_puppet_environment],
-                          'media' => @media })
+                          'media' => @media, 'location' => default_location })
     assign_location(default_location,
                     { 'domain' => default_domain, 'subnet' => default_subnet,
                       'config_templates' => default_config_templates, 'hostgroups' => [default_hostgroup],
                       'environments' => [default_puppet_environment],
-                      'media' => @media })
+                      'media' => @media, 'organization' => default_organization })
   end
 
   private
@@ -216,6 +216,7 @@ class ProvisioningSeeder < BaseSeeder
     hostgroup_ids = organization['hostgroups'].map { |h| h['id'] }
     environment_ids = organization['environments'].map { |e| e['id'] }
     medium_ids = organization['media'].map { |m| m['id'] }
+    location_ids = organization['locations'].map { |l| l['id'] }
 
     @foreman.organizations.update('id' => organization['id'],
                                   'organization' => { 'domain_ids' => (domain_ids + [objects['domain']['id']]).uniq,
@@ -223,7 +224,8 @@ class ProvisioningSeeder < BaseSeeder
                                                       'config_template_ids' => (config_template_ids + objects['config_templates'].map{ |t| t['id'] }).uniq,
                                                       'hostgroup_ids' => (hostgroup_ids + objects['hostgroups'].map{ |h| h['id'] }).uniq,
                                                       'environment_ids' => (environment_ids + [objects['environments'].map{ |e| e['id'] }]).flatten.uniq,
-                                                      'medium_ids' => (medium_ids + [objects['media'].map{ |m| m['id'] }]).uniq })
+                                                      'medium_ids' => (medium_ids + objects['media'].map{ |m| m['id'] }).uniq,
+                                                      'location_ids' => (location_ids + [objects['location']['id']]).uniq })
   end
 
   def assign_location(location, objects)
@@ -233,6 +235,7 @@ class ProvisioningSeeder < BaseSeeder
     hostgroup_ids = location['hostgroups'].map { |h| h['id'] }
     environment_ids = location['environments'].map { |e| e['id'] }
     medium_ids = location['media'].map { |m| m['id'] }
+    organization_ids = location['organizations'].map { |o| o['id'] }
 
     @foreman.locations.update('id' => location['id'],
                               'location' => { 'domain_ids' => (domain_ids + [objects['domain']['id']]).uniq,
@@ -240,7 +243,8 @@ class ProvisioningSeeder < BaseSeeder
                                               'config_template_ids' => (config_template_ids + objects['config_templates'].map{ |t| t['id'] }).uniq,
                                               'hostgroup_ids' => (hostgroup_ids + objects['hostgroups'].map{ |h| h['id'] }).uniq,
                                               'environment_ids' => (environment_ids + [objects['environments'].map{ |e| e['id'] }]).flatten.uniq,
-                                              'medium_ids' => (medium_ids + [objects['media'].map{ |m| m['id'] }]).uniq })
+                                              'medium_ids' => (medium_ids + objects['media'].map{ |m| m['id'] }).uniq,
+                                              'organization_ids' => (organization_ids + [objects['organization']['id']]).uniq })
   end
 
   def setup_setting(default_hostgroup)
