@@ -25,4 +25,19 @@ unless app_value(:hostname).nil?
       kafo.class.exit(101)
     end
   end
+
+  # set /etc/hosts if needed
+  `hostname -f`
+  if $?.exitstatus > 0 
+    filename = '/etc/hosts'
+    logger.debug("hostname -f failed. Setting temporary hostname for loopback in #{filename}")
+    unless kafo.noop?
+      open(filename, 'a') do |f|
+        f << "# temporary hostname for loopback\n"
+        f << "127.0.0.1 #{hostname}\n"
+      end
+    end
+  end
+
+  nil
 end
