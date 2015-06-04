@@ -56,6 +56,13 @@ class ProvisioningSeeder < BaseSeeder
                                                          { 'search' => 'name:ovirt AND author:jcannon' },
                                                          { 'name' => 'ovirt', 'author' => 'jcannon' })
 
+    # We have observed that if the installer is run with --reset, the
+    # database content is reset (as expected); however, the puppet environments
+    # remain on the file system.  This causes trouble when the installer is re-ran
+    # as it appears that existing environments are re-imported, but not associated
+    # with katello, an organization...etc.
+    destroy_default_puppet_env(default_organization, default_content_view)
+
     publish_task = @foreman.api_resource(:content_views).
                             action(:publish).
                             call({ :id => default_content_view['id'] })
@@ -179,15 +186,19 @@ class ProvisioningSeeder < BaseSeeder
                         { 'domain' => default_domain, 'subnet' => default_subnet,
                           'config_templates' => default_config_templates, 'hostgroups' => [default_hostgroup],
                           'environments' => [default_puppet_environment],
-                          'media' => @media })
-    assign_location(default_location,
-                    { 'domain' => default_domain, 'subnet' => default_subnet,
-                      'config_templates' => default_config_templates, 'hostgroups' => [default_hostgroup],
-                      'environments' => [default_puppet_environment],
-                      'media' => @media })
+                          'media' => @media, 'location' => default_location })
   end
 
   private
+
+  def destroy_default_puppet_env(organization, content_view)
+    puppet_env = @foreman.environments.first("name = " + puppet_environment_name(organization, content_view))
+    if puppet_env
+      if organization['environments'].none? { |env| env['id'] == puppet_env['id'] }
+        @foreman.environments.destroy('id' => puppet_env['id'])
+      end
+    end
+  end
 
   def puppet_environment_name(organization, content_view)
     "KT_" + organization['label'] + "_Library_" + content_view['label'] + "_" + content_view['id'].to_s
@@ -200,6 +211,7 @@ class ProvisioningSeeder < BaseSeeder
     hostgroup_ids = organization['hostgroups'].map { |h| h['id'] }
     environment_ids = organization['environments'].map { |e| e['id'] }
     medium_ids = organization['media'].map { |m| m['id'] }
+    location_ids = organization['locations'].map { |l| l['id'] }
 
     @foreman.organizations.update('id' => organization['id'],
                                   'organization' => { 'domain_ids' => (domain_ids + [objects['domain']['id']]).uniq,
@@ -207,24 +219,8 @@ class ProvisioningSeeder < BaseSeeder
                                                       'config_template_ids' => (config_template_ids + objects['config_templates'].map{ |t| t['id'] }).uniq,
                                                       'hostgroup_ids' => (hostgroup_ids + objects['hostgroups'].map{ |h| h['id'] }).uniq,
                                                       'environment_ids' => (environment_ids + [objects['environments'].map{ |e| e['id'] }]).flatten.uniq,
-                                                      'medium_ids' => (medium_ids + [objects['media'].map{ |m| m['id'] }]).uniq })
-  end
-
-  def assign_location(location, objects)
-    domain_ids = location['domains'].map { |d| d['id'] }
-    subnet_ids = location['subnets'].map { |s| s['id'] }
-    config_template_ids = location['config_templates'].map { |t| t['id'] }
-    hostgroup_ids = location['hostgroups'].map { |h| h['id'] }
-    environment_ids = location['environments'].map { |e| e['id'] }
-    medium_ids = location['media'].map { |m| m['id'] }
-
-    @foreman.locations.update('id' => location['id'],
-                              'location' => { 'domain_ids' => (domain_ids + [objects['domain']['id']]).uniq,
-                                              'subnet_ids' => (subnet_ids + [objects['subnet']['id']]).uniq,
-                                              'config_template_ids' => (config_template_ids + objects['config_templates'].map{ |t| t['id'] }).uniq,
-                                              'hostgroup_ids' => (hostgroup_ids + objects['hostgroups'].map{ |h| h['id'] }).uniq,
-                                              'environment_ids' => (environment_ids + [objects['environments'].map{ |e| e['id'] }]).flatten.uniq,
-                                              'medium_ids' => (medium_ids + [objects['media'].map{ |m| m['id'] }]).uniq })
+                                                      'medium_ids' => (medium_ids + objects['media'].map{ |m| m['id'] }).uniq,
+                                                      'location_ids' => (location_ids + [objects['location']['id']]).uniq })
   end
 
   def setup_setting(default_hostgroup)
