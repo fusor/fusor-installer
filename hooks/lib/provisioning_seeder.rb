@@ -168,7 +168,14 @@ class ProvisioningSeeder < BaseSeeder
     hostgroup_attrs = {'name' => "Fusor Base",
                        'domain_id' => default_domain['id'],
                        'subnet_id' => default_subnet['id']}
+
     default_hostgroup = @foreman.hostgroups.show_or_ensure({'id' => "Fusor Base"}, hostgroup_attrs)
+
+    @foreman.parameters.show_or_ensure({'id' => 'ntp-server', 'hostgroup_id' => 'Fusor Base'},
+                                         {
+                                           'name' => 'ntp-server',
+                                           'value' => @ntp_host,
+                                         })
 
     setup_idle_timeout
     setup_default_root_pass
